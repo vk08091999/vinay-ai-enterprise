@@ -1,0 +1,12 @@
+{
+  "short_name": "VinayAI",
+  "name": "Vinay AI Studio",
+  "icons": [
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" }
+  ],
+  "start_url": "/?source=pwa",
+  "background_color": "#120E26",
+  "theme_color": "#120E26",
+  "display": "standalone"
+}

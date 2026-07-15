@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vinay AI Studio</title>
+<meta name="description" content="Vinay AI Studio - one console for chat, code, translation and notes." />
+<link rel="manifest" href="/manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#120E26;
+    --bg-2:#1D1740;
+    --surface:rgba(255,255,255,0.045);
+    --surface-border:rgba(255,255,255,0.09);
+    --text-hi:#EDEAF7;
+    --text-lo:#A79FC7;
+    --accent:#8C7BFA;
+    --accent-2:#4FD1C5;
+    --radius:18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    color:var(--text-hi);
+    background:
+      radial-gradient(1100px 600px at 12% -10%, rgba(140,123,250,0.16), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(79,209,197,0.10), transparent 55%),
+      linear-gradient(180deg,var(--bg-1),var(--bg-2) 55%, #150F2C 100%);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  .noise{
+    position:fixed;inset:0;pointer-events:none;opacity:0.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:22px clamp(20px,5vw,64px);
+  }
+  .logo{display:flex;align-items:center;gap:9px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;letter-spacing:-0.01em;}
+  .logo .mark{
+    width:26px;height:26px;border-radius:8px;flex:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 18px rgba(140,123,250,0.55);
+  }
+  .logo .mark svg{width:14px;height:14px;}
+  .logo span.grad{background:linear-gradient(90deg,#fff,var(--accent) 90%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .logo .sub{font-family:'Inter';font-weight:500;font-size:11px;color:var(--text-lo);letter-spacing:0.14em;text-transform:uppercase;margin-left:2px;}
+  main{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    padding:10px 20px 40px;
+  }
+  .intro{text-align:center;max-width:640px;margin:18px 0 28px;}
+  .intro h1{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:clamp(26px,4vw,38px);
+    margin:0 0 10px;line-height:1.15;
+  }
+  .intro p{color:var(--text-lo);margin:0;font-size:15px;line-height:1.6;}
+  .console{
+    width:100%;max-width:760px;
+    background:var(--surface);
+    border:1px solid var(--surface-border);
+    border-radius:var(--radius);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 30px 80px -30px rgba(0,0,0,0.55);
+    overflow:hidden;
+    position:relative;
+  }
+  .console::before{
+    content:"";position:absolute;inset:-1px;border-radius:var(--radius);padding:1px;
+    background:linear-gradient(120deg, rgba(140,123,250,0.55), rgba(79,209,197,0.0) 30%, rgba(79,209,197,0.35) 70%, rgba(140,123,250,0.5));
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;mask-composite:exclude;
+    pointer-events:none;opacity:0.6;animation:sheen 7s ease-in-out infinite;
+  }
+  @keyframes sheen{0%,100%{opacity:0.35;}50%{opacity:0.75;}}
+  .modes{
+    display:flex;gap:6px;padding:14px 16px;flex-wrap:wrap;
+    border-bottom:1px solid var(--surface-border);
+  }
+  .mode-btn{
+    font-family:'Inter';font-size:13px;font-weight:500;color:var(--text-lo);
+    background:transparent;border:1px solid transparent;border-radius:999px;
+    padding:7px 14px;cursor:pointer;transition:all .15s ease;
+  }
+  .mode-btn:hover{color:var(--text-hi);}
+  .mode-btn.active{
+    color:#12102A;background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    font-weight:600;
+  }
+  #log{
+    height:420px;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:14px;
+  }
+  .msg{max-width:82%;padding:11px 15px;border-radius:14px;font-size:14.5px;line-height:1.55;white-space:pre-wrap;}
+  .msg.user{align-self:flex-end;background:linear-gradient(135deg,var(--accent),#6E5CE0);color:#fff;border-bottom-right-radius:4px;}
+  .msg.bot{align-self:flex-start;background:rgba(255,255,255,0.06);border:1px solid var(--surface-border);color:var(--text-hi);border-bottom-left-radius:4px;}
+  .msg.err{align-self:flex-start;background:rgba(255,90,90,0.08);border:1px solid rgba(255,90,90,0.3);color:#ffb3b3;}
+  .msg.system{align-self:center;color:var(--text-lo);font-size:13px;background:none;}
+  .composer{display:flex;gap:10px;padding:16px;border-top:1px solid var(--surface-border);}
+  #input{
+    flex:1;resize:none;min-height:46px;max-height:140px;
+    background:rgba(255,255,255,0.05);border:1px solid var(--surface-border);
+    border-radius:12px;color:var(--text-hi);padding:12px 14px;font-family:'Inter';font-size:14.5px;
+    outline:none;
+  }
+  #input:focus{border-color:var(--accent);}
+  #send{
+    flex:none;border:none;border-radius:12px;padding:0 20px;font-weight:600;font-size:14px;
+    color:#12102A;background:linear-gradient(90deg,var(--accent),var(--accent-2));cursor:pointer;
+  }
+  #send:disabled{opacity:0.5;cursor:not-allowed;}
+  footer{padding:26px 20px 34px;text-align:center;}
+  .contact{display:flex;justify-content:center;gap:16px;margin-bottom:14px;}
+  .contact a{
+    width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    background:var(--surface);border:1px solid var(--surface-border);color:var(--text-lo);
+    transition:all .15s ease;
+  }
+  .contact a:hover{color:var(--text-hi);border-color:var(--accent);transform:translateY(-2px);}
+  .contact svg{width:17px;height:17px;fill:currentColor;}
+  footer p{color:var(--text-lo);font-size:12.5px;margin:0;}
+  @media(max-width:480px){ #log{height:360px;} }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+
+<header>
+  <div class="logo">
+    <span class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="white"/></svg></span>
+    <span class="grad">Vinay AI</span>
+    <span class="sub">Studio</span>
+  </div>
+</header>
+
+<main>
+  <div class="intro">
+    <h1>One console. Every task.</h1>
+    <p>Chat, write code, translate, and turn audio or video notes into something useful — all in a single conversation.</p>
+  </div>
+
+  <div class="console">
+    <div class="modes" id="modes">
+      <button class="mode-btn active" data-mode="chat">Chat</button>
+      <button class="mode-btn" data-mode="code">Code Assistant</button>
+      <button class="mode-btn" data-mode="translate">Translator Pro</button>
+      <button class="mode-btn" data-mode="audio">Audio Notes</button>
+      <button class="mode-btn" data-mode="video">Video Notes</button>
+    </div>
+
+    <div id="log">
+      <div class="msg system">Pick a mode above, then start typing. Everything happens right here in one chat.</div>
+    </div>
+
+    <div class="composer">
+      <textarea id="input" placeholder="Message Vinay AI..." rows="1"></textarea>
+      <button id="send">Send</button>
+    </div>
+  </div>
+
+  <footer>
+    <div class="contact">
+      <a href="#" title="LinkedIn" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.45-2.14 2.94v5.66H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+      </a>
+      <a href="#" title="Indeed" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M12.02 2.02c-.94 0-1.7.76-1.7 1.7v.3a1.7 1.7 0 0 0 3.4 0v-.3c0-.94-.76-1.7-1.7-1.7zM10.4 8.9h3.2v12.6a2.5 2.5 0 0 1-2.5 2.5h-.2a2.5 2.5 0 0 1-2.5-2.5V11.4a2.5 2.5 0 0 1 2-2.5z"/></svg>
+      </a>
+      <a href="#" title="WhatsApp" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.27-.1-.46-.15-.66.15-.2.3-.75.94-.92 1.13-.17.2-.34.22-.63.08-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.14.3-.34.44-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.66-1.6-.9-2.18-.24-.58-.48-.5-.66-.5h-.56c-.2 0-.52.08-.79.37-.27.3-1.03 1.01-1.03 2.46s1.06 2.86 1.2 3.06c.15.2 2.1 3.2 5.08 4.5.71.3 1.26.49 1.7.62.71.23 1.36.2 1.87.12.57-.08 1.7-.7 1.94-1.36.24-.67.24-1.24.17-1.36-.07-.12-.26-.2-.55-.35zM12.02 2C6.5 2 2 6.48 2 12c0 1.8.48 3.55 1.38 5.08L2 22l5.05-1.33A9.96 9.96 0 0 0 12.02 22C17.55 22 22 17.52 22 12S17.55 2 12.02 2z"/></svg>
+      </a>
+      <a href="#" title="X" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24"><path d="M18.24 3H21l-6.55 7.49L22 21h-6.3l-4.93-6.44L4.9 21H2.13l7-8L2 3h6.44l4.46 5.9L18.24 3zm-1.1 16.17h1.74L7.02 4.74H5.15l12 14.43z"/></svg>
+      </a>
+    </div>
+    <p>&copy; 2026 Vinay AI Studio. Built for creators and builders.</p>
+  </footer>
+</main>
+
+<script>
+const log = document.getElementById('log');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const modeBtns = document.querySelectorAll('.mode-btn');
+let mode = 'chat';
+let history = [];
+
+modeBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    modeBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+  });
+});
+
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+});
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+sendBtn.addEventListener('click', send);
+
+function addMsg(text, cls){
+  const d = document.createElement('div');
+  d.className = 'msg ' + cls;
+  d.textContent = text;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+  return d;
+}
+
+async function send(){
+  const text = input.value.trim();
+  if(!text) return;
+  addMsg(text, 'user');
+  history.push({role:'user', content:text});
+  input.value = ''; input.style.height='auto';
+  sendBtn.disabled = true;
+  const thinking = addMsg('Thinking...', 'bot');
+
+  try{
+    const res = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ message:text, mode:mode, history:history.slice(-10) })
+    });
+    const data = await res.json();
+    if(!res.ok){ throw new Error(data.detail || 'Something went wrong.'); }
+    thinking.textContent = data.reply;
+    history.push({role:'assistant', content:data.reply});
+  }catch(err){
+    thinking.textContent = err.message;
+    thinking.className = 'msg err';
+  }finally{
+    sendBtn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
